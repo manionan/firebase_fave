@@ -1,1 +1,1 @@
-from . import fave
+from .fave import *
