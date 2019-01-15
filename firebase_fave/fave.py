@@ -91,7 +91,7 @@ def require_creds(creds_reqs={}):
 
             if 'exp' in auth_resp\
                     and auth_resp['exp'] > time.time()\
-                    and min(*[bool(creds_reqs[k](v)) for k, v in claims.items()]):
+                    and min(*[bool(creds_reqs[k](v)) for k, v in claims.items() if k in creds_reqs.keys()]):
                 return protected_function(*args, **kwargs)
             else:
                 abort(401)
