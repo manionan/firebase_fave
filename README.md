@@ -19,6 +19,8 @@ firebase_admin.verify_user('the_password', email='the_email') # can also use uid
 
 # require credentials (as well as a valid idToken)
 # NOTE: requires a firestore collection named "user_claims", documents keyed by uid and containing the claims
-@require_creds({'access_flag': lambda x: x & 8, 'release_lag', lambda x: time.time() > RELEASE_TIME + x})
+@firebase_fave.require_creds(
+    {'access_flag': lambda x: x & 8, 'release_lag', lambda x: time.time() > RELEASE_TIME + x}
+  )
 def get(self, ...
 ```
