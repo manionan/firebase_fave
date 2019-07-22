@@ -46,6 +46,30 @@ def verify_user(self, **kwargs):
         return response
 
 
+# add token refresh to user manager
+@_add_method(firebase_admin._user_mgt.UserManager)
+def exchange_refresh_token(self, **kwargs):
+    """exchanges refreshToken for new idToken"""
+    if 'refresh_token' in kwargs:
+        refresh_token = kwargs.pop('refresh_token')
+    else:
+        refresh_token = ''
+
+    payload = {'grant_type':'refresh_token', 'refresh_token':refresh_token}
+
+    try:
+        response = self._client.request('post', 'securetoken.googleapis.com', json=payload)
+    except requests.exceptions.RequestException as error:
+        msg = 'Failed to exchange refresh token'
+        self._handle_http_error(INTERNAL_ERROR, msg, error)
+    else:
+        if not response:
+            raise ApiCallError(
+                AuthError,
+                'Unable to user refresh token.')
+        return response
+
+
 # as in firebase_admin, we want a convenience method as well
 def _outer_verify_user(password, **kwargs):
     """Verifies a user given password and one of uid or email.
@@ -59,7 +83,7 @@ def _outer_verify_user(password, **kwargs):
         
     Raises:
         ValueError: if both user ID and email are None, empty, or malformed
-        AuthError: If an error occurs while deleting the user account.
+        AuthError: If an error occurs while authenticating.
     """
     app = kwargs.pop('app', None)
     user_manager = _get_auth_service(app).user_manager
@@ -70,8 +94,31 @@ def _outer_verify_user(password, **kwargs):
         raise AuthError(error.code, str(error), error.detail)
 
 
-# finally, apply this convenience method to the class.
+# same for refresh token, we want a convenience method as well
+def _outer_exchange_refresh_token(refresh_token, **kwargs):
+    """Exchanges a user's refreshToken.
+    Args:
+        refresh_token.
+
+    Returns:
+        UserRecord: A UserRecord instance.
+
+    Raises:
+        AuthError: If an error occurs while authenticating.
+    """
+    app = kwargs.pop('app', None)
+    user_manager = _get_auth_service(app).user_manager
+    try:
+        return user_manager.exchange_refresh_token(refresh_token=refresh_token)
+    except firebase_admin._user_mgt.ApiCallError as error:
+        raise AuthError(error.code, str(error), error.detail)
+
+
+
+# finally, apply these convenience methods to the class.
 firebase_admin.verify_user = _outer_verify_user
+firebase_admin.exchange_refresh_token = _outer_exchange_refresh_token
+
 
 
 # wrapper function to require credentials and claims!
