@@ -5,8 +5,8 @@ from flask import abort, request
 # import several different ways to make the code read like it would as part of the package it belongs in
 import firebase_admin
 from firebase_admin._user_mgt import *
-from firebase_admin.auth import _get_auth_service, AuthError
-from firebase_admin import firestore
+from firebase_admin.auth import _get_auth_service, AuthError, ApiCallError, USER_NOT_FOUND_ERROR, INTERNAL_ERROR
+#from firebase_admin import firestore
 
 
 # helper to add methods
@@ -122,7 +122,7 @@ firebase_admin.exchange_refresh_token = _outer_exchange_refresh_token
 
 
 # wrapper function to require credentials and claims!
-def require_creds(creds_reqs={}):
+def require_creds(creds_reqs):
 
     def real_require_creds(protected_function):
 
